@@ -1,9 +1,12 @@
 import datetime
+import json
+import requests
+import api_list
 
 REWORD_AMOUNT = 999
+OTHER_API_LIST = api_list.API_LIST
 
 class BlockChain(object):
-
     def __init__(self):
         self.transaction_pool = {"transactions": []}
         self.chain = {"blocks": []}
@@ -11,11 +14,10 @@ class BlockChain(object):
     def add_transaction_pool(self, transaction):
         transaction_dict = transaction.dict()
         self.transaction_pool["transactions"].append(transaction_dict)
-    
+
     def create_new_block(self, creator):
-        time = datetime.datetime.now().isoformat()
         reword_transaction_dict = {
-            "time": time,
+            "time": datetime.datetime.now().isoformat(),
             "sender": "Blockchain",
             "receiver": creator,
             "amount": REWORD_AMOUNT,
@@ -27,11 +29,28 @@ class BlockChain(object):
         transactions.append(reword_transaction_dict)
 
         block = {
-            "time":time,
-            "transactions":transactions,
-            "hash":"hash_sample",
-            "nonce":0
+            "time": datetime.datetime.now().isoformat(),
+            "transactions": transactions,
+            "hash": "hash_sample",
+            "nonce": 0
         }
 
         self.chain["blocks"].append(block)
         self.transaction_pool["transactions"] = []
+
+    def broadcast_transaction(self, transaction):
+        transaction_dict = transaction.dict()
+        for url in OTHER_API_LIST:
+            res = requests.post(url+"/receive_transaction", json.dumps(transaction_dict))
+            print(res.json())
+
+    def broadcast_chain(self, chain):
+        for url in OTHER_API_LIST:
+            res = requests.post(url+"/receive_chain", json.dumps(chain))
+            print(res.json())
+        
+    def replace_chain(self, chain):
+        chain_dict = chain.dict()
+        self.chain = chain_dict
+        self.transaction_pool["transactions"] = []
+        
